@@ -1,4 +1,4 @@
-# WD My Clou dMirror Stupid Ufraw Workaround
+# WD My Cloud Mirror Stupid Ufraw Workaround
 
 In WD My Cloud devices, the thumbnail generation process hangs while processing some Canon Raw .CR2 files.  
 
