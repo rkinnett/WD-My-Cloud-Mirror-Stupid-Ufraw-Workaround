@@ -24,24 +24,24 @@
 # period and allowed number of cycles, as follows: 
 #      allowableDuration = waitSecBetweenChecks * persistence
 # i.g. if persistence==4 and waitSecBetweenChecks==30 then allowableDuration=120 sec
-waitSecBetweenChecks=30  # sec between checks cycles
+waitSecBetweenChecks=15  # sec between checks cycles
 persistence=4   # number of check cycles the process is allowed to live
 #  
 #############################################################################
 # TO USE THIS SCRIPT:
 #
 # In an SSH session, navigate to the directory where you stored the script.
-# If for example you put the script in your Public folder, then, within your 
-# ssh session, you can get to that directory as follows:
-#   cd /shares/Volume_1/Public/
+# If for example you put the script in your password-protected my_private_folder
+# folder, then, within your ssh session, you can get to that directory as follows:
+#   cd /shares/Volume_1/my_private_folder/
 #
 # From there, you need to make the script executable (for root only):
-#   chmod u+x ./stop_ufraw.sh
+#   chmod 744 ./stop_ufraw.sh
 #
 # Then run it via ash shell, as follows:
 #   ash ./stop_ufraw.sh  
 #
-# And let it run or until it stops finding hung processes.  
+# And let it run until it stops finding hung processes.  
 # This may take a very long time!
 #############################################################################
 #
@@ -52,7 +52,7 @@ while true; do
 	echo ""
 	date;
 	
-	openCr2Files=$(ps aux | grep CR2 | grep -v grep | sed -r 's|.*(/shares/.*\.CR2).*|\1|g' | grep -i Volume)
+	openCr2Files=$(ps aux | grep -i CR2 | grep -v grep | sed -r 's|.*(/shares/.*\.[cC][rR]2).*|\1|g' | grep -i Volume)
 	nOpenCr2Files=$(echo "$openCr2Files" | grep -i -c Volume)
 	if [ $nOpenCr2Files -gt 0 ]; then
 		echo "$nOpenCr2Files open cr2 files:"
@@ -73,11 +73,11 @@ while true; do
 	if [ $nUfrawPidsCurrent -gt 0 ]; then
 	
 		# Concatenate current pids list to running list:
-		ufrawPidsHistory=$(echo "%s\n%s" "$ufrawPidsHistory" "$ufrawProcessesCurrent")
+		ufrawPidsHistory=$(echo "%s\n%s" "$ufrawPidsHistory" "$ufrawProcessesCurrent" | tail -n200)
 
 		# For each currently running process, check if it has been running too long
 		for thisCurrentPid in $ufrawPidsCurrent; do
-			#
+			
 			# If this pid shows up [persistence] times in running list then it's time too kill it
 			checkCyclesElapsed=$(echo "$ufrawPidsHistory" | grep -c "$thisCurrentPid")
 			echo "  process $thisCurrentPid has been running for $checkCyclesElapsed cycles"
