@@ -29,14 +29,14 @@ I have not experimented to determine an ideal allowable duration.  The default 2
 Download the stop_ufraw.sh script and store it anywhere on your MyCloud NAS.
 
 In an SSH session (see warnings above), navigate to the directory where you stored the script.
-If for example you put the script in your Public folder, then, within your 
+If for example you put the script in your "my_private_folder" folder, then, within your 
 ssh session, you can get to that directory as follows:  
-`cd /shares/Volume_1/Public/`
+`cd /shares/Volume_1/my_private_folder/`
 
-From there, you need to make the script executable (for root only):  
-`chmod u+x ./stop_ufraw.sh`
+From there, you need to make the script executable for root only:  
+`chmod 744 ./stop_ufraw.sh`
 
 Then run it via ash shell, as follows:  
 `ash ./stop_ufraw.sh`
 
-And let it run or until it stops finding hung processes. This may take a _very_ long time!
+And let it run (keep your ssh session open) until it stops finding hung processes. This may take a _very_ long time if you have many .cr2 files on your NAS.
