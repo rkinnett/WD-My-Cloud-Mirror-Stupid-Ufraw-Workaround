@@ -16,17 +16,9 @@
 # inordinate durations while generating thumbnails of Canon Raw (CR2) files.
 # https://community.wd.com/t/help-ufraw-batch-running-for-9-days-straight-device-completely-unusable/213776/37
 #
-# This script periodically checks if "ufraw-batch" is running, allows each 
-# instance some time to try to complete nominally, and kills the process if the
-# allowable duration runs out.
+# This script periodically checks if "ufraw-batch" is running, and terminates
+# each instance as it pops up.
 #
-# The effective allowable run time for each process is dictated by the check
-# period and allowed number of cycles, as follows: 
-#      allowableDuration = waitSecBetweenChecks * persistence
-# i.g. if persistence==4 and waitSecBetweenChecks==30 then allowableDuration=120 sec
-waitSecBetweenChecks=15  # sec between checks cycles
-persistence=4   # number of check cycles the process is allowed to live
-#  
 #############################################################################
 # TO USE THIS SCRIPT:
 #
@@ -44,49 +36,47 @@ persistence=4   # number of check cycles the process is allowed to live
 # And let it run until it stops finding hung processes.  
 # This may take a very long time!
 #############################################################################
+# CONFIGURATION:
+#
+longWait=60;
+shortWait=5;
 #
 #
+#############################################################################
 #
 # Start looping forever...
 while true; do
-	echo ""
-	date;
-	
-	openCr2Files=$(ps aux | grep -i CR2 | grep -v grep | sed -r 's|.*(/shares/.*\.[cC][rR]2).*|\1|g' | grep -i Volume)
-	nOpenCr2Files=$(echo "$openCr2Files" | grep -i -c Volume)
-	if [ $nOpenCr2Files -gt 0 ]; then
-		echo "$nOpenCr2Files open cr2 files:"
-		echo "$openCr2Files" | sed 's|^|  |g'
-	else
-		echo "$nOpenCr2Files open cr2 files"
-	fi
-	
-	# Get current list of ufraw pids:
-	ufrawProcessesCurrent=$(ps aux | grep 'ufraw-batch' | grep -v grep | sed 's|^ *||g')
-	ufrawPidsCurrent=$(echo "$ufrawProcessesCurrent" | cut -d' ' -f1 | egrep '^[0-9]+' | sort -n )
-	
-	# Get count:
-	nUfrawPidsCurrent=$(echo "$ufrawPidsCurrent" | egrep -c '^[0-9]')
-	echo "$nUfrawPidsCurrent ufraw-batch processes are currently running"
-	
-	# If there are currently some ufraw processes running then check if they've been running for awhile
-	if [ $nUfrawPidsCurrent -gt 0 ]; then
-	
-		# Concatenate current pids list to running list:
-		ufrawPidsHistory=$(echo "%s\n%s" "$ufrawPidsHistory" "$ufrawProcessesCurrent" | tail -n200)
+  echo ""
+  date;
+  
+  # Check if any cr2 files are currently open.  
+  # This is informational only; the script does nothing with this.
+  openCr2Files=$(ps aux | grep -i CR2 | grep -v grep | sed -r 's|.*(/shares/.*\.[cC][rR]2).*|\1|g' | grep -i Volume)
+  nOpenCr2Files=$(echo "$openCr2Files" | grep -i -c Volume)
+  if [ $nOpenCr2Files -gt 0 ]; then
+    echo "$nOpenCr2Files open cr2 files:"
+    echo "$openCr2Files" | sed 's|^|  |g'
+  else
+    echo "$nOpenCr2Files open cr2 files"
+  fi
+  
+  # Get current list of ufraw pids:
+  ufrawProcessesCurrent=$(ps aux | grep 'ufraw-batch' | grep -v grep | sed 's|^ *||g')
+  ufrawPidsCurrent=$(echo "$ufrawProcessesCurrent" | cut -d' ' -f1 | egrep '^[0-9]+' | sort -n )
+  
+  # Get count:
+  nUfrawPidsCurrent=$(echo "$ufrawPidsCurrent" | egrep -c '^[0-9]')
+  echo "$nUfrawPidsCurrent ufraw-batch processes are currently running"
 
-		# For each currently running process, check if it has been running too long
-		for thisCurrentPid in $ufrawPidsCurrent; do
-			
-			# If this pid shows up [persistence] times in running list then it's time too kill it
-			checkCyclesElapsed=$(echo "$ufrawPidsHistory" | grep -c "$thisCurrentPid")
-			echo "  process $thisCurrentPid has been running for $checkCyclesElapsed cycles"
-			if [ $checkCyclesElapsed -ge $persistence ]; then
-				echo "    killing pid $thisCurrentPid"
-				kill $thisCurrentPid;
-			fi		
-		done
-	fi
-	
-	sleep $waitSecBetweenChecks
+  if [ $nUfrawPidsCurrent -gt 0 ]; then
+    # Terminate each instance of ufraw-batch:
+    for thisCurrentPid in $ufrawPidsCurrent; do      
+      echo "    killing pid $thisCurrentPid"
+      kill $thisCurrentPid;
+    done
+    sleep $shortWait
+    
+  else
+    sleep $longWait
+  fi
 done
